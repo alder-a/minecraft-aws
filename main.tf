@@ -2,6 +2,11 @@ provider "aws" {
   region = "us-east-1"
 }
 
+variable "ec2_instance_type" {
+  type        = string
+  description = "ec2 instance type, recommend at least t2.small"
+}
+
 data "aws_vpc" "default" {
  default = true
 }
@@ -32,12 +37,16 @@ resource "aws_instance" "minecraft_server" {
   tags          = {
     Name        = "minecraft-server"
   }
-  instance_type = "t2.small"
+  instance_type = var.ec2_instance_type
   vpc_security_group_ids      = [aws_security_group.minecraft_sg.id]
   root_block_device {
     volume_type           = "gp3"
     volume_size           = "16"
-    delete_on_termination = false
+    delete_on_termination = true
   }
   user_data = file("${path.module}/init-minecraft.sh")
+}
+
+output "ec2_global_ips" {
+  value = ["${aws_instance.minecraft_server.*.public_ip}"]
 }
